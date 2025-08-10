@@ -6,7 +6,6 @@ import ButtonPrincipal from "./button"
 export default function HeroHeader() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [videoLoaded, setVideoLoaded] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const mobileVideoRef = useRef<HTMLVideoElement>(null)
   const mobileVideoContainerRef = useRef<HTMLDivElement>(null)
@@ -16,37 +15,12 @@ export default function HeroHeader() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024) // lg breakpoint
     }
+
     checkMobile()
     window.addEventListener("resize", checkMobile)
+
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
-
-  // Precarregar o vídeo para desktop
-  useEffect(() => {
-    if (!isMobile && videoRef.current) {
-      const video = videoRef.current
-
-      const handleCanPlay = () => {
-        setVideoLoaded(true)
-        console.log("Video loaded and ready to play")
-      }
-
-      const handleLoadedData = () => {
-        console.log("Video data loaded")
-      }
-
-      video.addEventListener("canplay", handleCanPlay)
-      video.addEventListener("loadeddata", handleLoadedData)
-
-      // Precarregar o vídeo
-      video.load()
-
-      return () => {
-        video.removeEventListener("canplay", handleCanPlay)
-        video.removeEventListener("loadeddata", handleLoadedData)
-      }
-    }
-  }, [isMobile])
 
   const handlePlayVideo = async () => {
     if (isMobile) {
@@ -54,55 +28,13 @@ export default function HeroHeader() {
       setIsVideoPlaying(true)
       // O vídeo vai começar automaticamente com autoPlay
     } else {
-      // Comportamento para desktop - fullscreen melhorado
+      // Comportamento para desktop - fullscreen
       if (videoRef.current) {
         try {
-          console.log("Attempting to play video...")
-          const video = videoRef.current
-
-          // Resetar o vídeo
-          video.currentTime = 0
           setIsVideoPlaying(true)
-
-          // Aguardar o vídeo estar pronto
-          if (!videoLoaded) {
-            console.log("Video not loaded yet, waiting...")
-            await new Promise((resolve) => {
-              const checkLoaded = () => {
-                if (video.readyState >= 3) {
-                  // HAVE_FUTURE_DATA
-                  resolve(true)
-                } else {
-                  setTimeout(checkLoaded, 100)
-                }
-              }
-              checkLoaded()
-            })
-          }
-
-          // Tentar reproduzir primeiro
-          console.log("Playing video...")
-          await video.play()
-
-          // Aguardar um pouco antes de tentar fullscreen
-          setTimeout(async () => {
-            try {
-              console.log("Requesting fullscreen...")
-              if (video.requestFullscreen) {
-                await video.requestFullscreen()
-              } else if ((video as any).webkitRequestFullscreen) {
-                await (video as any).webkitRequestFullscreen()
-              } else if ((video as any).mozRequestFullScreen) {
-                await (video as any).mozRequestFullScreen()
-              } else if ((video as any).msRequestFullscreen) {
-                await (video as any).msRequestFullscreen()
-              }
-              console.log("Fullscreen activated")
-            } catch (fullscreenError) {
-              console.warn("Fullscreen failed, but video is playing:", fullscreenError)
-              // Continuar reproduzindo mesmo se fullscreen falhar
-            }
-          }, 200)
+          videoRef.current.currentTime = 0
+          await videoRef.current.play()
+          await videoRef.current.requestFullscreen()
         } catch (error) {
           console.error("Error playing video:", error)
           setIsVideoPlaying(false)
@@ -116,10 +48,9 @@ export default function HeroHeader() {
   }
 
   const handleVideoEnd = () => {
-    console.log("Video ended")
     setIsVideoPlaying(false)
     if (!isMobile && document.fullscreenElement) {
-      document.exitFullscreen().catch(console.warn)
+      document.exitFullscreen()
     }
     if (videoRef.current) {
       videoRef.current.currentTime = 0
@@ -139,16 +70,9 @@ export default function HeroHeader() {
     }
   }
 
-  const handleVideoError = (error: any) => {
-    console.error("Video error:", error)
-    setIsVideoPlaying(false)
-  }
-
   useEffect(() => {
     const handleFullscreenChangeEffect = () => {
-      console.log("Fullscreen change detected")
       if (!document.fullscreenElement && isVideoPlaying && !isMobile) {
-        console.log("Exiting fullscreen, stopping video")
         setIsVideoPlaying(false)
         if (videoRef.current) {
           videoRef.current.pause()
@@ -160,17 +84,11 @@ export default function HeroHeader() {
 
     if (!isMobile) {
       document.addEventListener("fullscreenchange", handleFullscreenChangeEffect)
-      document.addEventListener("webkitfullscreenchange", handleFullscreenChangeEffect)
-      document.addEventListener("mozfullscreenchange", handleFullscreenChangeEffect)
-      document.addEventListener("MSFullscreenChange", handleFullscreenChangeEffect)
     }
 
     return () => {
       if (!isMobile) {
         document.removeEventListener("fullscreenchange", handleFullscreenChangeEffect)
-        document.removeEventListener("webkitfullscreenchange", handleFullscreenChangeEffect)
-        document.removeEventListener("mozfullscreenchange", handleFullscreenChangeEffect)
-        document.removeEventListener("MSFullscreenChange", handleFullscreenChangeEffect)
       }
     }
   }, [isVideoPlaying, isMobile])
@@ -183,6 +101,7 @@ export default function HeroHeader() {
         if (videoContainer) {
           const containerTop = videoContainer.offsetTop
           const scrollToPosition = containerTop - 100 // 100px antes do vídeo
+
           window.scrollTo({
             top: scrollToPosition,
             behavior: "smooth",
@@ -200,7 +119,9 @@ export default function HeroHeader() {
         <div className="absolute inset-0 bg-[#787878] flex items-center justify-center z-5">
           <div className="h-8 w-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
         </div>
-        <div className="absolute inset-0 bg-[url('/fotos/bgmob2.png')] z-10  md:bg-[url('/fotos/bg.jpg')] bg-cover bg-[center] bg-no-repeat bg-black/15 bg-blend-darken"></div>
+        <div className="absolute inset-0 bg-[url('/fotos/bgmob2.png')] z-10  md:bg-[url('/fotos/bg.jpg')] bg-cover bg-[center] bg-no-repeat bg-black/15 bg-blend-darken">
+          
+        </div>
 
         {/* Content Container */}
         <div className="relative z-10 flex min-h-screen">
@@ -224,6 +145,7 @@ export default function HeroHeader() {
               <button
                 onClick={handlePlayVideo}
                 className="group relative bg-[#ffffff33] w-20 h-20 xl:w-24 xl:h-24 backdrop-blur-sm rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 cursor-pointer"
+                
                 aria-label="Reproduzir vídeo de boas-vindas"
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.3)"
@@ -235,6 +157,7 @@ export default function HeroHeader() {
                 <Play
                   className="w-8 h-8 text-[#ffffff] xl:w-10 xl:h-10 ml-1 group-hover:scale-110 transition-transform"
                   fill="white"
+                  
                 />
               </button>
             </div>
@@ -242,13 +165,15 @@ export default function HeroHeader() {
             {/* Right Side - CTA */}
             <div className="flex-1 px-12 xl:px-20">
               <div className="max-w-2xl">
-                <h1 className="text-5xl xl:text-4xl font-bold animate-fade-in-up text-[#ffffff]">
+                <h1 className="text-5xl xl:text-4xl font-bold animate-fade-in-up text-[#ffffff]" >
                   a psicanalista <span className="text-[#ffffffe6]">dos</span>
                   <br />
                   <span className="text-7xl">brasileiros</span>
                   <br />
                   <span className="text-[#ffffffe6]">pelo</span>{" "}
-                  <span className="px-3 py-1 rounded bg-[#98805E] text-[#ffffff]">mundo</span>
+                  <span className="px-3 py-1 rounded bg-[#98805E] text-[#ffffff]">
+                    mundo
+                  </span>
                 </h1>
               </div>
             </div>
@@ -267,8 +192,10 @@ export default function HeroHeader() {
                   <br />
                   brasileiros
                   <br />
-                  <span className="text-[#ffffffe6]">pelo</span>{" "}
-                  <span className="px-2 py-1 rounded text-[#ffffff] bg-[#98805E]">mundo</span>
+                  <span className="text-[#ffffffe6]" >pelo</span>{" "}
+                  <span className="px-2 py-1 rounded text-[#ffffff] bg-[#98805E]" >
+                    mundo
+                  </span>
                 </h1>
               </div>
             </div>
@@ -294,10 +221,12 @@ export default function HeroHeader() {
                     />
                   </button>
                 </div>
-                <p className="text-lg mb-6 italic font-medium animate-fade-in-up animation-delay-300 text-[#ffffff]">
+                <p
+                  className="text-lg mb-6 italic font-medium animate-fade-in-up animation-delay-300 text-[#ffffff]"
+                >
                   Para escutar, não há fronteiras
                 </p>
-                <ButtonPrincipal />
+                <ButtonPrincipal  />
               </div>
             </div>
           </div>
@@ -322,7 +251,7 @@ export default function HeroHeader() {
             controls
             autoPlay
             onEnded={handleVideoEnd}
-            onError={handleVideoError}
+            onError={() => setIsVideoPlaying(false)}
             playsInline
           >
             <source src="/videos/bemvindo.mp4" type="video/mp4" />
@@ -337,9 +266,7 @@ export default function HeroHeader() {
         className={`fixed inset-0 w-full h-full object-cover z-50 ${isVideoPlaying && !isMobile ? "block" : "hidden"}`}
         controls
         onEnded={handleVideoEnd}
-        onError={handleVideoError}
-        preload="metadata"
-        playsInline
+        onError={() => setIsVideoPlaying(false)}
       >
         <source src="/videos/bemvindo.mp4" type="video/mp4" />
         Seu navegador não suporta o elemento de vídeo.
