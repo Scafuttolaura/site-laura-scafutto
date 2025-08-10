@@ -254,7 +254,7 @@ export default function HeroHeader() {
             onError={() => setIsVideoPlaying(false)}
             playsInline
           >
-            <source src="/videos/bemvindo.MP4" type="video/mp4" />
+            <source src="/videos/bemvindo.mp4" type="video/mp4" />
             Seu navegador não suporta o elemento de vídeo.
           </video>
         </div>
@@ -268,7 +268,7 @@ export default function HeroHeader() {
         onEnded={handleVideoEnd}
         onError={() => setIsVideoPlaying(false)}
       >
-        <source src="/videos/bemvindo.MP4" type="video/mp4" />
+        <source src="/videos/bemvindo.mp4" type="video/mp4" />
         Seu navegador não suporta o elemento de vídeo.
       </video>
     </header>
